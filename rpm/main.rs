@@ -1,7 +1,8 @@
 use std::fs::{self, File};
-use std::io::{Write};
+use std::io::{Write, BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use clap::{App, Arg, SubCommand};
 
 fn extract_rpm_cpio(rpm_path: &str, extract_to: &str) -> Result<(), String> {
     fs::create_dir_all(extract_to).map_err(|e| format!("Ошибка при создании директории для извлечения: {}", e))?;
@@ -29,7 +30,6 @@ fn extract_rpm_cpio(rpm_path: &str, extract_to: &str) -> Result<(), String> {
 fn install_package(rpm_path: &str) -> Result<(), String> {
     let extract_dir = "/tmp/rpm_extract";
     let target_dir = Path::new("/usr");
-
 
     extract_rpm_cpio(rpm_path, extract_dir)?;
     
@@ -69,9 +69,34 @@ fn install_package(rpm_path: &str) -> Result<(), String> {
 }
 
 fn main() {
-    let rpm_path = "путь_к_пакету.rpm";
+    let matches = App::new("UPKGT-RPM")
+        .subcommand(SubCommand::with_name("install")
+            .about("Установить .rpm пакет")
+            .arg(Arg::with_name("package")
+                .help("Путь к .rpm файлу")
+                .required(true)
+                .index(1))
+            .arg(Arg::with_name("force")
+                .short("f")
+                .long("force")
+                .help("Принудительная установка")))
+        .get_matches();
 
-    if let Err(e) = install_package(rpm_path) {
-        eprintln!("Произошла ошибка при установке пакета: {}", e);
+    if let Some(matches) = matches.subcommand_matches("install") {
+        let package = matches.value_of("package").unwrap();
+        
+        if !package.ends_with(".rpm") {
+            eprintln!("Ошибка: Поддерживаются только файлы с расширением .rpm");
+            std::process::exit(1);
+        }
+
+        // Установка пакета
+        if let Err(e) = install_package(package) {
+            eprintln!("Произошла ошибка при установке пакета: {}", e);
+            std::process::exit(1);
+        }
+    } else {
+        eprintln!("Ошибка: Неизвестная команда");
+        std::process::exit(1);
     }
 }
