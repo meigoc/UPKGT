@@ -1,5 +1,6 @@
 use quick_xml::de::from_str;
 use serde::Deserialize;
+use std::fs;
 
 #[derive(Debug, Deserialize)]
 pub struct File {
@@ -22,14 +23,15 @@ pub struct Metadata {
     pub Name: String,
     pub Summary: String,
     pub Description: String,
-    pub Version: String,
-    pub License: String,
+    pub Architecture: String,
 }
 
-pub fn parse_files_xml(content: &str) -> Result<Files, quick_xml::Error> {
-    from_str(content)
+pub fn parse_files_xml(file_path: &str) -> Result<Files, quick_xml::Error> {
+    let content = fs::read_to_string(file_path).expect("Failed to read files.xml");
+    from_str(&content)
 }
 
-pub fn parse_metadata_xml(content: &str) -> Result<Metadata, quick_xml::Error> {
-    from_str(content)
+pub fn parse_metadata_xml(file_path: &str) -> Result<Metadata, quick_xml::Error> {
+    let content = fs::read_to_string(file_path).expect("Failed to read metadata.xml");
+    from_str(&content)
 }
